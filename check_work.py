@@ -37,20 +37,19 @@ with torch.no_grad():
     output = model(image)
 
 # Получим сегментированную маску из выхода модели
-
-
-# Визуализируем сегментированную маску 
 segmentation_mask = torch.argmax(output, dim=1).squeeze().cpu().numpy()
-# Здесь segmentation_mask - это массив с сегментированной маской
 
 
-# выводим изображение и сегментированную маску
+# Визуализируем сегментированную маску и исходное изображение
 plt.figure(figsize=(12, 8))
 plt.imshow(segmentation_mask, cmap='gray')
 plt.axis('off')
+plt.title("Сегментированная маска")
 plt.show()
+
 plt.figure(figsize=(12, 8))
 plt.imshow(image.squeeze().permute(1, 2, 0))
 plt.axis('off')
+plt.title("Исходное изображение")
 plt.show()
 

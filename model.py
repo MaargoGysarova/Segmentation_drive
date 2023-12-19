@@ -3,6 +3,13 @@ import torch.nn as nn
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import torch.nn.functional as TtF
+import torch.nn.functional as F
+
+# regnet fcn 
+# softmax activate function CONV2D
+
+
 
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -16,11 +23,11 @@ class DoubleConv(nn.Module):
             nn.ReLU(inplace=True)
         )
 
-def forward(self, x):
-    return self.conv(x) # экземпляр класса DoubleConv
+    def forward(self, x):
+        return self.conv(x) # экземпляр класса DoubleConv
 
 class UNET(nn.Module):
-    def __init__(self, in_channels=3, out_channels=1, features=[64, 128, 256, 512]):
+    def __init__(self, in_channels=3, out_channels = 1, features=[64, 128, 256, 512]):
         super(UNET, self).__init__()
         self.ups = nn.ModuleList() # список слоев вверх
         self.downs = nn.ModuleList() # список слоев вниз
@@ -54,20 +61,14 @@ class UNET(nn.Module):
             x = self.ups[idx](x)
             skip_connection = skip_connections[idx//2]
             if x.shape != skip_connection.shape: # если размеры не совпадают, то меняем размер
-                x = TF.resize(x, size=skip_connection.shape[2:])
+                x = F.resize(x, size=skip_connection.shape[2:])
             concat_skip = torch.cat((skip_connection, x), dim=1)
             x = self.ups[idx+1](concat_skip)
-        return self.final_conv(x)
-    
-def test():
-    x = torch.randn((3, 1, 161, 161))
-    model = UNET(in_channels=1, out_channels=1)
-    preds = model(x)
-    print(preds.shape)
-    assert preds.shape == x.shape
+            x = self.final_conv(x) 
+        
+        x = F.softmax(x, dim=1)  # Применяем softmax к выходу
+        return x 
 
-if __name__ == "__main__":
-    test()
     
     
 
