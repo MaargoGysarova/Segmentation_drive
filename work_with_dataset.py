@@ -6,7 +6,8 @@ import torch
 from torch.utils.data import Dataset , DataLoader
 from torchvision import transforms
 from sklearn.preprocessing import LabelEncoder
-from tensorflow.keras.utils import to_categorical
+
+# график обучения
 
 # Загрузка данных из CSV файла
 data = pd.read_csv('class_dict.csv')
@@ -19,7 +20,7 @@ class MyDataset(Dataset):
         self.mask_dir = mask_dir
         self.transform = transform
         self.is_train = is_train
-        self.num_classes = len(data['name'])
+        self.num_classes = len(data['name'])-1
 
         self.base_transform = transforms.Compose([
     transforms.ToTensor(),  # Преобразование в тензор
@@ -34,28 +35,31 @@ class MyDataset(Dataset):
         return len(self.images_path)
 
     def __getitem__(self, index):
+        if index < 0 or index >= len(self.images_path):
+            raise IndexError("Index is out of bounds")
         img_path = self.images_path[index]
-        mask_path = str(self.files[index]).replace(self.split, self.split + '_labels').replace('.png', '_L.png')
+        mask_path = str(self.images_path[index]).replace(self.split, self.split + '_labels').replace('.png', '_L.png')
 
         image = np.array(Image.open(img_path).convert("RGB"))
+        print(image.shape)
         mask = np.array(Image.open(mask_path).convert("L"), dtype=np.float32)
 
-        height, width, _ = image.shape  # Получаем размеры изображения
+        height, width = mask.shape  # Получаем размеры маски
 
-        # Создаем маску классов на основе class_labels
-        mask = np.zeros((height, width, self.num_classes), dtype=np.uint8)
+        # Создаем маску на основе классов
+        mask_class = np.zeros((height, width, self.num_classes), dtype=np.float32)
         for i in range(self.num_classes):
-            mask[np.where((image[:, :, 0] == data['r'][i]) &
-                        (image[:, :, 1] == data['g'][i]) &
-                        (image[:, :, 2] == data['b'][i])), i] = 1
+            mask_class[:, :, i] = (mask == i)
 
         if self.is_train and self.transform is not None:
             augmentations_image = self.transform(image)
-            augmentations_mask = self.transform(mask)
+            
+            augmentations_mask = self.transform(mask_class.transpose((2, 0, 1)))  # Транспонируем маску
             image = augmentations_image
-            mask = augmentations_mask
+            mask_class = augmentations_mask.transpose((1, 2, 0))  # Транспонируем маску обратно
 
-        return image, mask
+        print(f"shape = {image}")
+        return image, mask_class
 
 
 def get_loaders(train_img_dir, train_mask_dir, val_img_dir, val_mask_dir, batch_size, transform):
@@ -66,3 +70,11 @@ def get_loaders(train_img_dir, train_mask_dir, val_img_dir, val_mask_dir, batch_
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
     return train_loader, val_loader
+
+
+Dataset = MyDataset(img_dir='data/train', mask_dir='data/train_labels')
+image = Dataset.__getitem__(0)
+print(image[0])
+
+
+

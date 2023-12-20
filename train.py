@@ -46,11 +46,11 @@ def calculate_iou(predicted_mask, ground_truth_mask):
     return iou
 
 def calculate_pixel_accuracy(predicted_mask, ground_truth_mask):
-    #количество правильно классифицированных пикселей
+    # Количество правильно классифицированных пикселей для всех классов
     correct_pixels = np.sum(predicted_mask == ground_truth_mask)
-    # общее количество пикселей на изображении
+    # Общее количество пикселей на изображении
     total_pixels = predicted_mask.size
-    # pixel accuracy
+    # Pixel accuracy для всех классов
     pixel_accuracy = correct_pixels / total_pixels
     return pixel_accuracy
 
@@ -70,6 +70,7 @@ def train_fn(loader, model, optimizer, criterion, epoch):
 
     for inputs, masks in train_loader:
         inputs, masks = inputs.to(device), masks.to(device)
+        print(inputs.shape)
         optimizer.zero_grad()
         outputs = model(inputs)
         loss = criterion(outputs, masks)
